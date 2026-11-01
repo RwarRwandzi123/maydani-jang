@@ -1,23 +1,62 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>Maydani Jang</title>
-
+<title>مەیدانی جەنگ</title>
+<style>
+body{background:#17251b;color:white;text-align:center;font-family:Arial}
+canvas{background:#526b42;border:3px solid white;width:90%;max-width:400px}
+button{font-size:25px;padding:14px;margin:5px;border-radius:12px}
+</style>
 </head>
-
 <body>
-
 <h1>⚔️ مەیدانی جەنگ</h1>
-
-<p>یارییەکە بە زوویی دەست پێ دەکات!</p>
-
+<p id="status">پەیوەندی بە سێرڤەرەوە...</p>
+<canvas id="game" width="400" height="400"></canvas>
+<div>
+<button onclick="move(0,-30)">⬆️</button><br>
+<button onclick="move(-30,0)">⬅️</button>
+<button onclick="move(0,30)">⬇️</button>
+<button onclick="move(30,0)">➡️</button>
+</div>
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+let id=null,players={};
+const socket=new WebSocket(
+(location.protocol==="https:"?"wss://":"ws://")+location.host
+);
+socket.onopen=()=>document.getElementById("status").textContent="پەیوەندی سەرکەوتوو بوو";
+socket.onclose=()=>document.getElementById("status").textContent="پەیوەندی پچڕا";
+socket.onmessage=e=>{
+const data=JSON.parse(e.data);
+if(data.type==="welcome"){id=data.id;players=data.players}
+if(data.type==="players")players=data.players;
+draw();
+};
+function move(x,y){
+if(!id||socket.readyState!==1)return;
+const p=players[id];
+if(!p)return;
+socket.send(JSON.stringify({
+type:"move",
+x:Math.max(0,Math.min(2000,p.x+x)),
+y:Math.max(0,Math.min(2000,p.y+y))
+}));
+}
+function draw(){
+ctx.clearRect(0,0,400,400);
+for(const key in players){
+const p=players[key];
+ctx.fillStyle=key===id?"yellow":"red";
+ctx.beginPath();
+ctx.arc(p.x/5,p.y/5,9,0,Math.PI*2);
+ctx.fill();
+ctx.fillStyle="white";
+ctx.fillText(key===id?"تۆ":"یاریزان",p.x/5-12,p.y/5-14);
+}
+}
+</script>
 </body>
-
 </html>
